@@ -1,7 +1,6 @@
 {
     "name": "nextvikas/laravel-google-authenticator",
     "description": "2 step verification of google authenticator for your laravel application",
-    "type": "laravel-extension",
     "keywords": ["laravel", "extension", "google", "authenticator", "2 step verification"],
     "type": "library",
     "license": "MIT",
