@@ -1,0 +1,24 @@
+{
+    "name": "nextvikas/laravel-google-authenticator",
+    "description": "2 step verification of google authenticator for your laravel application",
+    "type": "laravel-extension",
+    "keywords": ["laravel", "extension", "google", "authenticator", "2 step verification"],
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Vikas Pandey",
+            "email": "svikas.pandey@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "nextvikas\\authenticator\\": "src/"
+        }
+    }
+}
