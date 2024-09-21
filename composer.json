@@ -5,6 +5,7 @@
     "type": "library",
     "license": "MIT",
     "minimum-stability": "dev",
+    "prefer-stable": true,
     "authors": [
         {
             "name": "Vikas Pandey",
@@ -13,11 +14,11 @@
         }
     ],
     "require": {
-        "php": "^7.4 || ^8.0"
+        "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3"
     },
     "autoload": {
         "psr-4": {
-            "nextvikas\\authenticator\\": "src/"
+            "Nextvikas\\Authenticator\\": "src/"
         }
     }
 }
