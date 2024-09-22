@@ -3,17 +3,12 @@
 namespace Nextvikas\Authenticator\Middleware;
 
 use Closure;
-use DOMDocument;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
-
-abstract class TwoStepAuthenticator
+class TwoStepAuthenticator
 {
-
-    
-    abstract protected function apply();
-
     /**
      * Handle an incoming request.
      *
@@ -24,9 +19,27 @@ abstract class TwoStepAuthenticator
      */
     public function handle(Request $request, Closure $next)
     {
-        $response = $next($request);
+        $enabled = Config('authenticator.enabled');
 
+        if($enabled) {
+            
+            $login_route_name = Config('authenticator.login_route_name');
+            $login_guard_name = Config('authenticator.login_guard_name');
 
+            if (Auth::guard($login_guard_name)->check()) {
+                if( ! Session::has('TwoStepAuthenticator') ) {
+                    if(!empty(Auth::guard($login_guard_name)->user()->authenticator)) {
+                        return redirect()->route('authenticator.verify');
+                    } else {
+                        return redirect()->route('authenticator.scan');
+                    }
+                }
+            } else {
+                return redirect()->route($login_route_name);
+            }
+
+        }
+        return $next($request);
     }
 
 }

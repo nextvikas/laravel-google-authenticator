@@ -4,6 +4,7 @@
     "keywords": ["laravel", "extension", "google", "authenticator", "2 step verification"],
     "type": "library",
     "license": "MIT",
+    "version": "1.0.0",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "authors": [
@@ -14,6 +15,7 @@
         }
     ],
     "require": {
+        "laravel/framework": ">=7.0",
         "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3"
     },
     "autoload": {
