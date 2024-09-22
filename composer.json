@@ -22,5 +22,12 @@
         "psr-4": {
             "Nextvikas\\Authenticator\\": "src/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nextvikas\\Authenticator\\AuthenticatorServiceProvider"
+            ]
+        }
     }
 }
