@@ -58,8 +58,8 @@ Simply change default configration values on **config\authenticator.php** file o
 
  return [
      // Determines whether the verification process is enabled. 
-     // It pulls the value from the environment file (.env), with a default value of 'false' if not set.
-     'enabled' => env('VERIFICATION_ENABLED', false),
+     // It pulls the value from the environment file (.env), with a default value of 'true' if not set.
+     'enabled' => env('VERIFICATION_ENABLED', true),
  
      // The route name for the login page. 
      // This specifies where the user will be redirected for login, with a default route 'account.login'.
