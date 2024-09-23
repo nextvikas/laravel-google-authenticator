@@ -18,6 +18,13 @@
      // It is pulled from the .env file with 'web' as the default guard.
      'login_guard_name' => env('VERIFICATION_LOGIN_GUARD_NAME', 'web'),
  
+     /*
+     * The guard path is the route where you want the 2FA (Two-Factor Authentication) page to open, ensuring an extra layer of security before granting access.
+     * Example : if set '/' then /verify-two-step, if set '/admin' then /admin/verify-two-step
+     * It is pulled from the .env file with '/' as the default guard path.
+     */
+    'guard_path' => env('VERIFICATION_GUARD_PATH', '/'),
+
      // The main layout used for the verification views.
      // Defaults to 'layouts.app', but can be overridden via the .env file.
      'main_layout' => env('VERIFICATION_MAIN_LAYOUT', 'layouts.app'),
