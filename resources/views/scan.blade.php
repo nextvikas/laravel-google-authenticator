@@ -1,9 +1,5 @@
-<!-- packages/abcd/resources/views/bootstrap-form.blade.php -->
 @extends(Config('authenticator.main_layout'))
-<!-- Use your main layout -->
-
 @section('content')
-
 
 <div class="row justify-content-center mt-3">
             <div class="col-md-6 col-md-offset-3 _amd">
