@@ -103,6 +103,16 @@ class AuthenticatorController extends Controller
         }
     }
 
+    private function replaceFormat($input, $data) {
+        // Use preg_replace_callback to find placeholders and replace them dynamically
+        return preg_replace_callback('/\{(.*?)\}/', function($matches) use ($data) {
+            // Get the placeholder name from $matches[1], and replace with corresponding data
+            $placeholder = $matches[1];
+            return isset($data[$placeholder]) ? $data[$placeholder] : $matches[0]; // Return original if not found
+        }, $input);
+    }
+
+
     /**
      * Show the QR code scanning page for two-step verification setup.
      *
@@ -118,9 +128,14 @@ class AuthenticatorController extends Controller
 
         // Retrieve the guard name from the configuration.
         $guard_name = Config::get('authenticator.login_guard_name');
+        $app_name = Config::get('authenticator.app_format');
 
-        // Generate the QR code URL for the user to scan.
-        $qrCodeUrl = (new Authenticator)->getQR('Nextvikas (' . Auth::guard($guard_name)->user()->email . ')', request()->session()->get('auth_secret'));
+        $userArray =  Auth::guard($guard_name)->user()->toArray();
+
+        // Replace the placeholders with dynamic data
+        $output = $this->replaceFormat($app_name, $userArray);
+
+        $qrCodeUrl = (new Authenticator)->getQR($output, request()->session()->get('auth_secret'));
 
         // Render the scan view with the QR code URL.
         return view('authenticator::scan', [

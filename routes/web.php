@@ -11,6 +11,9 @@ Route::middleware([AuthChecker::class])->group(function () {
 
      // Retrieve the guard name from the configuration.
      $guard_path = Config::get('authenticator.guard_path');
+     if($guard_path == '/') {
+          $guard_path = '';
+     }
 
     // Route for displaying the two-step verification page.
     Route::get($guard_path.'/verify-two-step', [AuthenticatorController::class, 'verify_two_step'])
