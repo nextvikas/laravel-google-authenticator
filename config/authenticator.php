@@ -14,7 +14,7 @@ return [
     /*
     * This format will be displayed in the Google Authenticator app. You can customize the name however you like, and you can include user fields in the format {field}. For example, you can add {email}, {username}, {phone}, and so on.
     */
-    'app_format' => 'Dearbloggers: {username}',
+    'app_format' => 'Appname: {username}',
 
 
     // The route name for the login page. 

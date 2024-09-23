@@ -132,7 +132,7 @@ class AuthenticatorController extends Controller
 
         $userArray =  Auth::guard($guard_name)->user()->toArray();
 
-        // Replace the placeholders with dynamic data
+        // Replace the format with dynamic data
         $output = $this->replaceFormat($app_name, $userArray);
 
         $qrCodeUrl = (new Authenticator)->getQR($output, request()->session()->get('auth_secret'));
