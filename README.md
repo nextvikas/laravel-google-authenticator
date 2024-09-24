@@ -21,7 +21,7 @@ The current package requirements are:
 
 **1. Add to composer.json**
 ```
-composer require nextvikas/laravel-google-authenticator
+composer require "nextvikas/laravel-google-authenticator @dev"
 ```
 **2. Publish the Files Using artisan vendor:publish command**
 For a package, you typically use vendor:publish to copy files like migration or configuration files from the nextvikas/laravel-google-authenticator to your application.
