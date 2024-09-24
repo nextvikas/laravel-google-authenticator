@@ -1,11 +1,11 @@
-@extends(Config('authenticator.main_layout'))
+@extends(Config('authenticator.'.$role.'.main_layout'))
 @section('content')
 
 <div class="row justify-content-center mt-3">
             <div class="col-md-6 col-md-offset-3 _amd">
                 <p class="_ap">Identify yourself by scannning the QR code with Google Authenticator app</p>
                 <hr>
-                {{ Form::open(array('url' => route('authenticator.scan'), 'method' => 'POST')) }}
+                {{ Form::open(array('url' => route('authenticator.'.$role.'.scan'), 'method' => 'POST')) }}
                     <div class="_aform">
 
 

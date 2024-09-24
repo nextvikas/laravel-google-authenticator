@@ -20,16 +20,18 @@ class AuthenticatorController extends Controller
      */
     public function verify_two_step(Request $request)
     {
+        $role = $request->attributes->get('customRole') ?? '';
+
         // Retrieve the guard name from the configuration.
-        $guard_name = Config::get('authenticator.login_guard_name');
+        $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
 
         // Check if the user has an associated authenticator. If not, redirect to the scan page.
         if (empty(Auth::guard($guard_name)->user()->authenticator)) {
-            return redirect()->route('authenticator.scan');
+            return redirect()->route('authenticator.'.$role.'.scan');
         }
 
         // Render the verification view.
-        return view('authenticator::verify');
+        return view('authenticator::verify', compact('role'));
     }
 
     /**
@@ -40,11 +42,13 @@ class AuthenticatorController extends Controller
      */
     public function verify_two_step_process(Request $request)
     {
+        $role = $request->attributes->get('customRole') ?? '';
+
         // Validate the incoming request for the verification code.
         $this->validate($request, ['code' => 'required|numeric|min:6']);
 
         // Retrieve the guard name from the configuration.
-        $guard_name = Config::get('authenticator.login_guard_name');
+        $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
 
         // Attempt to decrypt the user's authenticator data.
         try {
@@ -61,8 +65,8 @@ class AuthenticatorController extends Controller
             return redirect()->back()->withErrors(['code' => ['Invalid Google Authenticator Code']]);
         } else {
             // On successful verification, store the session variable and redirect accordingly.
-            $success_route_name = Config::get('authenticator.success_route_name');
-            $request->session()->put('TwoStepAuthenticator', true);
+            $success_route_name = Config::get('authenticator.'.$role.'.success_route_name');
+            $request->session()->put('TwoStepAuthenticator'.$role, true);
             return $success_route_name ? redirect()->route($success_route_name) : redirect()->to('/');
         }
     }
@@ -78,6 +82,8 @@ class AuthenticatorController extends Controller
         // Validate the incoming request for the verification code.
         $this->validate($request, ['code' => 'required|numeric|min:6']);
 
+        $role = $request->attributes->get('customRole') ?? '';
+
         // Verify the code against the session's auth secret.
         $checkResult = (new Authenticator)->verifyCode($request->session()->get('auth_secret'), $request->get('code'), 2);
 
@@ -86,7 +92,7 @@ class AuthenticatorController extends Controller
             return redirect()->back()->withErrors(['code' => ['Invalid Google Authenticator Code']]);
         } else {
             // On successful verification, update the user's authenticator secret.
-            $guard_name = Config::get('authenticator.login_guard_name');
+            $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
             $userModel = Config::get('auth.providers.users.model');
 
             $userId = Auth::guard($guard_name)->user()->id;
@@ -95,13 +101,14 @@ class AuthenticatorController extends Controller
             $user->save();
 
             // Store the session variable to indicate successful verification.
-            $request->session()->put('TwoStepAuthenticator', true);
+            $request->session()->put('TwoStepAuthenticator'.$role, true);
 
             // Redirect to the success route or the root.
-            $success_route_name = Config::get('authenticator.success_route_name');
+            $success_route_name = Config::get('authenticator.'.$role.'.success_route_name');
             return $success_route_name ? redirect()->route($success_route_name) : redirect()->to('/');
         }
     }
+
 
     private function replaceFormat($input, $data) {
         // Use preg_replace_callback to find placeholders and replace them dynamically
@@ -118,8 +125,10 @@ class AuthenticatorController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function scan_two_step()
+    public function scan_two_step(Request $request)
     {
+        $role = $request->attributes->get('customRole') ?? '';
+
         // Generate and store a new auth secret if it doesn't already exist in the session.
         if (!request()->session()->has('auth_secret')) {
             $secret = (new Authenticator)->generateRandomSecret();
@@ -127,7 +136,7 @@ class AuthenticatorController extends Controller
         }
 
         // Retrieve the guard name from the configuration.
-        $guard_name = Config::get('authenticator.login_guard_name');
+        $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
         $app_name = Config::get('authenticator.app_format');
 
         $userArray =  Auth::guard($guard_name)->user()->toArray();
@@ -139,7 +148,8 @@ class AuthenticatorController extends Controller
 
         // Render the scan view with the QR code URL.
         return view('authenticator::scan', [
-            'qrCodeUrl' => $qrCodeUrl
+            'qrCodeUrl' => $qrCodeUrl,
+            'role' => $role
         ]);
     }
 }
