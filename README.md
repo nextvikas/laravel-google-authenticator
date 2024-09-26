@@ -142,4 +142,11 @@ Simply change default configration values on **config\authenticator.php** file:
     ],
 ];
 ```
-You can also modify the view file from (**\resources\views\vendor\authenticator\scan.blade.php** and **\resources\views\vendor\authenticator\verify.blade.php**) location with your own code.
+## Modify View Files
+
+First copy: 
+```php
+1. \vendor\nextvikas\laravel-google-authenticator\resources\views\scan.blade.php to \resources\views\vendor\authenticator\scan.blade.php
+2. \vendor\nextvikas\laravel-google-authenticator\resources\views\verify.blade.php to \resources\views\vendor\authenticator\verify.blade.php
+```
+And then you can modify the view files with your own code.
