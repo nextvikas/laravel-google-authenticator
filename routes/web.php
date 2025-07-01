@@ -12,6 +12,9 @@ Route::middleware([AuthChecker::class])->group(function () {
      $guard_path = Config::get('authenticator');
      if(!empty($guard_path)) {
           foreach($guard_path as $key => $guardpath) {
+               if($key == 'app_format') {
+                    continue;
+               }
                // Route for displaying the two-step verification page.
                Route::get($key.'/verify-two-step', [AuthenticatorController::class, 'verify_two_step'])
                ->name('authenticator.'.$key.'.verify'); // Name the route for easy reference.
