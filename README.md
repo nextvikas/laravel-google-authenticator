@@ -46,6 +46,17 @@ php artisan vendor:publish --provider="Nextvikas\Authenticator\AuthenticatorServ
 php artisan migrate
 ```
 
+
+
+# Demo
+
+<img width="675" height="731" alt="image" src="https://github.com/user-attachments/assets/eadf8e0f-afa1-462b-91bd-727278085495" />
+
+<img width="655" height="401" alt="image" src="https://github.com/user-attachments/assets/8f763426-1284-4a32-8f0a-13954beb3730" />
+
+
+
+
 # Documentation
 
 Once the extension is installed, Simply add **Authenticator** middleware to whatever you want to secure, and that's it, your work ends here and **Authenticator** begins...
