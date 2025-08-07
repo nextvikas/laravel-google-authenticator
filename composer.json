@@ -1,12 +1,21 @@
 {
     "name": "nextvikas/laravel-google-authenticator",
-    "description": "2 step verification of google authenticator for your laravel application",
-    "keywords": ["laravel", "extension", "google", "authenticator", "2 step verification"],
+    "description": "A highly secure, dependency-free package to add Google Two-Factor Authentication (2FA) to Laravel applications.",
+    "keywords": [
+        "laravel",
+        "google",
+        "authenticator",
+        "google2fa",
+        "2fa",
+        "two-factor",
+        "mfa",
+        "otp",
+        "security",
+        "2-step-verification",
+        "dependency-free"
+    ],
     "type": "library",
     "license": "MIT",
-    "version": "1.0.0",
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "authors": [
         {
             "name": "Vikas Pandey",
@@ -14,9 +23,14 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://github.com/nextvikas/laravel-google-authenticator",
+    "support": {
+        "source": "https://github.com/nextvikas/laravel-google-authenticator",
+        "issues": "https://github.com/nextvikas/laravel-google-authenticator/issues"
+    },
     "require": {
-        "laravel/framework": ">=7.0",
-        "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3"
+        "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3",
+        "laravel/framework": "^7.0|^8.0|^9.0|^10.0|^11.0|^12.0"
     },
     "autoload": {
         "psr-4": {
@@ -29,5 +43,8 @@
                 "Nextvikas\\Authenticator\\AuthenticatorServiceProvider"
             ]
         }
+    },
+    "config": {
+        "sort-packages": true
     }
 }

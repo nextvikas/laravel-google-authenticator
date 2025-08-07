@@ -9,9 +9,24 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Session;
 
 class AuthenticatorController extends Controller
 {
+
+    protected Authenticator $authenticator;
+
+    /**
+     * Constructor to inject Authenticator helper and set context-specific config.
+     *
+     * @param Authenticator $authenticator
+     */
+    public function __construct(Authenticator $authenticator)
+    {
+        $this->authenticator = $authenticator;
+    }
+
+
     /**
      * Show the two-step verification page.
      *
@@ -20,18 +35,21 @@ class AuthenticatorController extends Controller
      */
     public function verify_two_step(Request $request)
     {
-        $role = $request->attributes->get('customRole') ?? '';
+        $authenticator = $this->authenticator->getRoute($request);
+        $role = collect($authenticator)->get(1, '');
 
         // Retrieve the guard name from the configuration.
         $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
+        $secretColumn = Config::get('authenticator.otp_settings.secret_column_name');
 
         // Check if the user has an associated authenticator. If not, redirect to the scan page.
-        if (empty(Auth::guard($guard_name)->user()->authenticator)) {
+        if (empty(Auth::guard($guard_name)->user()->{$secretColumn})) {
             return redirect()->route('authenticator.'.$role.'.scan');
         }
 
         // Render the verification view.
-        return view('authenticator::verify', compact('role'));
+        $config = Config::get('authenticator.'.$role);
+        return view('authenticator::verify', compact('role', 'config'));
     }
 
     /**
@@ -42,32 +60,37 @@ class AuthenticatorController extends Controller
      */
     public function verify_two_step_process(Request $request)
     {
-        $role = $request->attributes->get('customRole') ?? '';
+        // Validate the incoming request for the verification code.
+        $otp_digits = Config::get('authenticator.otp_settings.otp_digits');
 
         // Validate the incoming request for the verification code.
-        $this->validate($request, ['code' => 'required|numeric|min:6']);
+        $request->validate(['code' => 'required|numeric|digits:' . $otp_digits]);
+
+        $authenticator = $this->authenticator->getRoute($request);
+        $role = collect($authenticator)->get(1, '');
 
         // Retrieve the guard name from the configuration.
         $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
 
+        $secretColumn = Config::get('authenticator.otp_settings.secret_column_name');
         // Attempt to decrypt the user's authenticator data.
         try {
-            $decrypted = Crypt::decryptString(Auth::guard($guard_name)->user()->authenticator);
+            $decrypted = Crypt::decryptString(Auth::guard($guard_name)->user()->{$secretColumn});
         } catch (DecryptException $e) {
             $decrypted = ''; // If decryption fails, set to an empty string.
         }
 
         // Verify the code against the decrypted secret.
-        $checkResult = (new Authenticator)->verifyCode($decrypted, $request->get('code'), 2);
+        $checkResult = $this->authenticator->verifyCode($decrypted, $request->get('code'));
 
         if (!$checkResult) {
             // If the verification fails, redirect back with an error message.
             return redirect()->back()->withErrors(['code' => ['Invalid Google Authenticator Code']]);
         } else {
+            Session::put('TwoStepAuthenticator' . $role, true); // Use Session facade directly
             // On successful verification, store the session variable and redirect accordingly.
             $success_route_name = Config::get('authenticator.'.$role.'.success_route_name');
-            $request->session()->put('TwoStepAuthenticator'.$role, true);
-            return $success_route_name ? redirect()->route($success_route_name) : redirect()->to('/');
+            return $success_route_name ? redirect()->route($success_route_name) : redirect()->intended('/');
         }
     }
 
@@ -79,13 +102,24 @@ class AuthenticatorController extends Controller
      */
     public function scan_two_step_process(Request $request)
     {
-        // Validate the incoming request for the verification code.
-        $this->validate($request, ['code' => 'required|numeric|min:6']);
+        $otp_digits = Config::get('authenticator.otp_settings.otp_digits');
 
-        $role = $request->attributes->get('customRole') ?? '';
+        // Validate the incoming request for the verification code.
+        $request->validate(['code' => 'required|numeric|digits:' . $otp_digits]);
+
+        $authenticator = $this->authenticator->getRoute($request);
+        $role = collect($authenticator)->get(1, '');
+
+        $sessionSecret = Session::get('auth_secret');
+
+        if (empty($sessionSecret)) {
+            // This should ideally not happen if flow is correct, but handles direct access or session timeout.
+            return redirect()->route('authenticator.' . $role . '.scan')
+                             ->withErrors(['code' => ['Session expired or secret not found. Please try scanning again.']]);
+        }
 
         // Verify the code against the session's auth secret.
-        $checkResult = (new Authenticator)->verifyCode($request->session()->get('auth_secret'), $request->get('code'), 2);
+        $checkResult = $this->authenticator->verifyCode($sessionSecret, $request->get('code'));
 
         if (!$checkResult) {
             // If verification fails, redirect back with an error message.
@@ -93,29 +127,38 @@ class AuthenticatorController extends Controller
         } else {
             // On successful verification, update the user's authenticator secret.
             $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
-            $userModel = Config::get('auth.providers.users.model');
+            $secretColumn = Config::get('authenticator.otp_settings.secret_column_name');
 
-            $userId = Auth::guard($guard_name)->user()->id;
-            $user = $userModel::findOrFail($userId);
-            $user->authenticator = Crypt::encryptString($request->session()->get('auth_secret'));
+
+            $user = Auth::guard($guard_name)->user();
+            $user->{$secretColumn} = Crypt::encryptString($sessionSecret); // Dynamic column name
             $user->save();
 
-            // Store the session variable to indicate successful verification.
-            $request->session()->put('TwoStepAuthenticator'.$role, true);
+            // Clear the secret from session as it's now saved in DB.
+            Session::forget('auth_secret');
 
-            // Redirect to the success route or the root.
-            $success_route_name = Config::get('authenticator.'.$role.'.success_route_name');
-            return $success_route_name ? redirect()->route($success_route_name) : redirect()->to('/');
+            // Store the session variable to indicate successful 2FA verification.
+            Session::put('TwoStepAuthenticator' . $role, true);
+
+            // Redirect to the success route or the intended URL/root.
+            $successRouteName = Config::get('authenticator.'.$role.'.success_route_name');
+            return $successRouteName ? redirect()->route($successRouteName) : redirect()->intended('/');
         }
     }
 
 
     private function replaceFormat($input, $data) {
+        if(empty($input)) {
+            return '';
+        }
+        if(empty($data)) {
+            return $input;
+        }
         // Use preg_replace_callback to find placeholders and replace them dynamically
         return preg_replace_callback('/\{(.*?)\}/', function($matches) use ($data) {
             // Get the placeholder name from $matches[1], and replace with corresponding data
-            $placeholder = $matches[1];
-            return isset($data[$placeholder]) ? $data[$placeholder] : $matches[0]; // Return original if not found
+            $placeholder = $matches[1] ?? '';
+            return $data[$placeholder] ?? $matches[0] ?? ''; // Return original if not found
         }, $input);
     }
 
@@ -127,29 +170,31 @@ class AuthenticatorController extends Controller
      */
     public function scan_two_step(Request $request)
     {
-        $role = $request->attributes->get('customRole') ?? '';
+        $authenticator = $this->authenticator->getRoute($request);
+        array_pop($authenticator);
+        $authenticator = implode('.', $authenticator);
 
         // Generate and store a new auth secret if it doesn't already exist in the session.
-        if (!request()->session()->has('auth_secret')) {
-            $secret = (new Authenticator)->generateRandomSecret();
-            request()->session()->put('auth_secret', $secret);
+        if (!Session::has('auth_secret')) {
+            $secret = $this->authenticator->generateRandomSecret();
+            Session::put('auth_secret', $secret);
         }
 
         // Retrieve the guard name from the configuration.
-        $guard_name = Config::get('authenticator.'.$role.'.login_guard_name');
-        $app_name = Config::get('authenticator.app_format');
+        $guard_name = Config::get($authenticator.'.login_guard_name');
+        $app_name = Config::get('authenticator.otp_settings.app_format');
 
         $userArray =  Auth::guard($guard_name)->user()->toArray();
 
         // Replace the format with dynamic data
         $output = $this->replaceFormat($app_name, $userArray);
 
-        $qrCodeUrl = (new Authenticator)->getQR($output, request()->session()->get('auth_secret'));
+        $qrCodeUrl = $this->authenticator->getQR($output, Session::get('auth_secret'));
 
         // Render the scan view with the QR code URL.
         return view('authenticator::scan', [
             'qrCodeUrl' => $qrCodeUrl,
-            'role' => $role
+            'fullrole' => $authenticator
         ]);
     }
 }

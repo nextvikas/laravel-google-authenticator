@@ -1,11 +1,10 @@
 <?php
-namespace Nextvikas\Authenticator;
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddAuthenticatorColumnsToUsers extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -14,15 +13,14 @@ class AddAuthenticatorColumnsToUsers extends Migration
      */
     public function up()
     {
-        // Get the user model class dynamically from the configuration
         $userModel = config('auth.providers.users.model');
-
-        // Create an instance of the user model to get the associated table name
         $userTable = (new $userModel)->getTable();
+        $secretColumnName = config('authenticator.otp_settings.secret_column_name', 'authenticator');
 
-        Schema::table($userTable, function (Blueprint $table) {
-            // Add your extra columns here
-            $table->string('authenticator')->nullable();
+        Schema::table($userTable, function (Blueprint $table) use ($secretColumnName, $userTable) {
+            if (!Schema::hasColumn($userTable, $secretColumnName)) {
+                $table->longText($secretColumnName)->nullable();
+            }
         });
     }
 
@@ -33,13 +31,14 @@ class AddAuthenticatorColumnsToUsers extends Migration
      */
     public function down()
     {
-        // Get the user model and table name dynamically again
         $userModel = config('auth.providers.users.model');
         $userTable = (new $userModel)->getTable();
+        $secretColumnName = config('authenticator.otp_settings.secret_column_name', 'authenticator');
 
-        Schema::table($userTable, function (Blueprint $table) {
-            // Drop the columns when rolling back the migration
-            $table->dropColumn('authenticator');
+        Schema::table($userTable, function (Blueprint $table) use ($secretColumnName, $userTable) {
+            if (Schema::hasColumn($userTable, $secretColumnName)) {
+                $table->dropColumn($secretColumnName);
+            }
         });
     }
-}
+};

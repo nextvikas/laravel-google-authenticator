@@ -1,36 +1,33 @@
-@extends(Config('authenticator.'.$role.'.main_layout'))
+@extends('authenticator::layouts.app')
 @section('content')
 
-<div class="row justify-content-center mt-3">
-            <div class="col-md-6 col-md-offset-3 _amd">
-                <p class="_ap">Identify yourself by scannning the QR code with Google Authenticator app</p>
-                <hr>
-                {{ Form::open(array('url' => route('authenticator.'.$role.'.scan'), 'method' => 'POST')) }}
-                    <div class="_aform">
+<div class="text-center mb-4">
+    <h2 class="mb-3">Set Up Two-Factor Authentication</h2>
+    <p class="lead">Scan the QR code with your Google Authenticator app.</p>
+    <hr>
+</div>
 
+<form action="{{ route($fullrole.'.scanpost') }}" method="POST">
+    @csrf
+    <div class="authenticator-form-group text-center">
+        @if(isset($qrCodeUrl))
+            <img class="img-fluid" src="{{ $qrCodeUrl }}" alt="Scan this Google Authenticator QR Code" style="max-width:200px; height:auto; display:block; margin: 0 auto 1.5rem auto;"><br>
+        @endif
+    </div>
 
-                        <div class="form-group @error('comment') has-error @enderror">
+    <div class="authenticator-form-group">
+        <label for="code" class="form-label">Enter Your Google Authenticator Code</label>
+        <input type="text" class="form-control" id="code" value="{{ old('code') }}" name="code" placeholder="******" required autofocus>
+        @error('code')
+            <div class="invalid-feedback d-block" role="alert">{{ $message }}</div>
+        @enderror
+    </div>
 
-                        @if(isset($qrCodeUrl))
-                            <img class="img-fluid" src="{{ $qrCodeUrl }}" alt="Verify this Google Authenticator"><br><br>
-                        @endif
-
-
-
-                            <label>Enter Your Google Authenticator Code</label>
-                            <input type="text" class="form-control" value="{{ old('code') }}" name="code" placeholder="******">
-                            @error('code')
-                                <div class="text-danger" role="alert">{!! $message !!}</div>
-                            @enderror
-                        </div>
-
- 
-                            <x-adminlte-button type="submit" label="Verify" theme="primary" icon="fa fa-key"/>
-
-                    </div>
-
-               {{ Form::close() }}
-            </div>
-        </div>
+    <div class="authenticator-button-group">
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-check"></i> Verify
+        </button>
+    </div>
+</form>
 
 @endsection

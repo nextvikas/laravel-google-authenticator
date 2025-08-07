@@ -5,6 +5,9 @@ namespace Nextvikas\Authenticator\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Nextvikas\Authenticator\Helpers\Authenticator;
+use Illuminate\Support\Facades\Config;
 
 class AuthChecker
 {
@@ -18,28 +21,16 @@ class AuthChecker
      */
     public function handle(Request $request, Closure $next)
     {
-        $as = $request->route()->action['as'] ?? '';
-        if(empty($as)) {
+        $authenticator = (new Authenticator)->getRoute($request);
+        if (empty($authenticator) || (is_array($authenticator) && in_array('authenticator', $authenticator))) {
             return $next($request);
         }
 
-        $exp = explode('.',$as);
-
-        $keyone = $exp[0] ?? '';
-        $keytwo = $exp[1] ?? '';
-
-        if(empty($keyone) || empty($keytwo)) {
-            return $next($request);
-        }
-
-        $authenticator = $keyone.'.'.$keytwo;
-
-        $request->attributes->set('customRole', $keytwo);
-
-        $login_route_name = Config($authenticator.'.login_route_name');
-        $login_guard_name = Config($authenticator.'.login_guard_name');
+        $login_route_name = Config::get($authenticator.'.login_route_name', 'login');
+        $login_guard_name = Config::get($authenticator.'.login_guard_name', 'web');
 
         if (!Auth::guard($login_guard_name)->check()) {
+            Session::put('url.intended', $request->url());
             return redirect()->route($login_route_name);
         }
         return $next($request);
