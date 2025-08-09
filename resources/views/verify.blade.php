@@ -5,6 +5,9 @@
     <h2 class="mb-3">Verify Two-Factor Authentication</h2>
     <p class="lead">Enter the code from your Google Authenticator app.</p>
     <hr>
+    <a href="{{ url('/') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-home"></i> Back to Home
+    </a>
 </div>
 
 <form action="{{ route('authenticator.'.$role.'.verifypost') }}" method="POST">

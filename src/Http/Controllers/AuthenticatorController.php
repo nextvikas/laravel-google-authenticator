@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Route;
 
 class AuthenticatorController extends Controller
 {
@@ -90,7 +91,7 @@ class AuthenticatorController extends Controller
             Session::put('TwoStepAuthenticator' . $role, true); // Use Session facade directly
             // On successful verification, store the session variable and redirect accordingly.
             $success_route_name = Config::get('authenticator.'.$role.'.success_route_name');
-            return $success_route_name ? redirect()->route($success_route_name) : redirect()->intended('/');
+            return $success_route_name && Route::has($success_route_name) ? redirect()->route($success_route_name) : redirect()->intended('/');
         }
     }
 
@@ -131,6 +132,14 @@ class AuthenticatorController extends Controller
 
 
             $user = Auth::guard($guard_name)->user();
+            if (!$user) {
+                $login_route_name = Config::get($authenticator.'.login_route_name', 'login');
+                if (Route::has($login_route_name)) {
+                    return redirect()->route($login_route_name)->with('error', 'Please login first to setup 2FA.');
+                } else {
+                    return redirect('/')->with('error', 'Please login first to setup 2FA.');
+                }
+            }
             $user->{$secretColumn} = Crypt::encryptString($sessionSecret); // Dynamic column name
             $user->save();
 
@@ -142,7 +151,7 @@ class AuthenticatorController extends Controller
 
             // Redirect to the success route or the intended URL/root.
             $successRouteName = Config::get('authenticator.'.$role.'.success_route_name');
-            return $successRouteName ? redirect()->route($successRouteName) : redirect()->intended('/');
+            return $successRouteName && Route::has($successRouteName) ? redirect()->route($successRouteName) : redirect()->intended('/');
         }
     }
 
@@ -181,10 +190,21 @@ class AuthenticatorController extends Controller
         }
 
         // Retrieve the guard name from the configuration.
-        $guard_name = Config::get($authenticator.'.login_guard_name');
-        $app_name = Config::get('authenticator.otp_settings.app_format');
+        $guard_name = Config::get($authenticator.'.login_guard_name', 'web');
+        $app_name = Config::get('authenticator.otp_settings.app_format', Config::get('app.name', 'Laravel App'));
 
-        $userArray =  Auth::guard($guard_name)->user()->toArray();
+        $user = Auth::guard($guard_name)->user();
+
+        if (!$user) {
+            $login_route_name = Config::get($authenticator.'.login_route_name', 'login');
+            if (Route::has($login_route_name)) {
+                return redirect()->route($login_route_name)->with('error', 'Please login first to setup 2FA.');
+            } else {
+                return redirect('/')->with('error', 'Please login first to setup 2FA.');
+            }
+        }
+
+        $userArray = $user->toArray();
 
         // Replace the format with dynamic data
         $output = $this->replaceFormat($app_name, $userArray);
